@@ -84,43 +84,6 @@ class farm: #information about when plants are planted
 			loopdate = loopdate + timedelta(days=1)
 		return ret
 
-	def addPlanting(self):
-		inputt = Globals.get("inputt")
-		#Add a planting action and auto add the harvesting dates based on the plant type
-		plantdate =inputt.getDate("Enter planting or harvesting date YYYY-MM-DD:", date(2022,5,1))
-		key = inputt.enumerateAndSelect(self.plants)
-		return [plantdate, key]
-
-	def addHarvestDate(self, date, key):
-
-		keypress = OneTouchInput("Press F1 for seeding date or F12 for harvesting Date")
-		growtime = int(planted.parameters.get("growtime"))
-		if keypress == "F12": #User has entered a harvesting date
-			harvestdate = plantdate
-			plantdate = plantdate + timedelta(days = -growtime)
-		else: #User has entered a harvesting date
-			harvestdate = plantdate + timedelta(days = growtime)
-			
-
-		print("Setting seed date of {} for harvest date of {}".format(plantdate, harvestdate))
-
-
-		#Now get how many plants are going in
-		try:
-			totalplants = getInteger("How many plants?", 100, 0, 100000)
-		except Exception as e:
-			print("{}".format(e))
-			print("Cancelling")
-			return
-		#Call the plant objects get event function to map out all processing steps from planting to sale ready
-		#This will add and date monies spent and monies earned
-		#Add the planting event in, tagged with the current planting event id
-		events = planted.getEvents(plantdate, totalplants)
-		#Spool them out into the master list in the crops object, organized from the initial planting via the event.ID
-		for event in events:
-			event.parameters.set("ID", self.PlantingEventID)
-			self.addEvent(event)
-		self.PlantingEventID += 1 #Need a new unique planting event ID
 	def removePlanting(self):
 		#loop through all planting dates, number them and query the user which one to remove
 		loopdate = min(self.events)
