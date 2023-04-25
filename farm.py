@@ -36,6 +36,7 @@ class farm: #information about when plants are planted
 		self.trackChanges = 0 #Increment for every change done to the schedule
 		self.addEvent(openingEvent)
 		self.trackChanges = 0 #How many changes are done for the confirmExit function, reset back to zero after addEvent adds it
+		self.PlantingEventID = 1
 
 		#Create the plant dictionary with instances of every type defined in the program
 		self.plants = []
@@ -83,7 +84,21 @@ class farm: #information about when plants are planted
 
 			loopdate = loopdate + timedelta(days=1)
 		return ret
+	
+	def get_plant(self, type):
+		for plant in self.plants:
+			if type == plant.parameters.get("type"):
+				return plant
+		return None
 
+	#Returns a list of known plant names
+	def plant_names(self):
+		ret = []
+
+		for p in self.plants:
+			ret.append(p.parameters.get("type"))
+		return ret
+	
 	def removePlanting(self):
 		#loop through all planting dates, number them and query the user which one to remove
 		loopdate = min(self.events)
@@ -250,10 +265,10 @@ class farm: #information about when plants are planted
 					harvests.append(e)
 		return harvests
 
-	def getAllPlantingEvents(self, eventlist):
+	def getAllPlantingEvents(self):
 		plantings = [] #a list of all the harvests, sorted by date
 
-		for eventDate, eventsToday in eventlist.items():
+		for eventDate, eventsToday in self.events.items():
 			#For todays events see if any are type of planting
 			for e in eventsToday:
 				if e.isPlanting() is True:

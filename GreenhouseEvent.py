@@ -117,7 +117,7 @@ class Processing(GreenhouseEvent): #A process is conducted on the
 		self.parameters.set("type", "Processing")
 		self.parameters.set("cost", cost) #Cost in dollars per plant
 		self.parameters.set("totalCost", size * cost)
-		self.parameters.set("labour", labourhours) #hours plant to accomplish processing
+		self.parameters.set("labour", labourhours)
 
 	def profit(self):
 		cost = self.parameters.get("cost")
