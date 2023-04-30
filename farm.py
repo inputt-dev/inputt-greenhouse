@@ -46,6 +46,22 @@ class farm: #information about when plants are planted
 		self.plants.append(CaliforniaWonderGreenBellPeppers())
 		self.plants.append(Saskatoons())
 		self.plants.append(IcebergLettuce())
+		planted = IndeterminateTomatoes()
+		plant_date = date(2023,6,6)
+		total_plants = 100
+		events = planted.getEvents(plant_date, total_plants)
+		for event in events:
+			event.parameters.set("ID", self.PlantingEventID)
+			self.addEvent(event)
+			self.PlantingEventID += 1 #Need a new unique planting event ID
+
+		planted = CaliforniaWonderGreenBellPeppers()
+		events = planted.getEvents(date(2023,3,3), 129)
+		for event in events:
+			event.parameters.set("ID", self.PlantingEventID)
+			self.addEvent(event)
+			self.PlantingEventID += 1 #Need a new unique planting event ID
+
 	def __str__(self):
 		begindate = self.parameters.get("Start date")
 		ret = ""
@@ -145,109 +161,6 @@ class farm: #information about when plants are planted
 			self.events[startdate].append(event)
 		else: #Nothing this day, initialize the list and add it to the events dictionary
 			self.events[startdate] = [event]
-
-	def exportCSV(self):
-		try:
-			print("Export work schedule CSV.")
-			fileName = getFileName("GreenHouse.csv")
-			workScheduleFile= open(fileName,"w+")
-
-			print("Export monthly cost and income breakdown CSV")
-			fileName = getFileName("GreenhouseBD.csv")
-			monthlyFile = open(fileName,"w+")
-
-			print("plant library")
-			fileName = getFileName("plants.csv")
-			plantsFile = open(fileName,"w+")
-		except Exception as e:
-			print("{}".format(e))
-			return
-
-		#Format a header line
-		line = "Action Type,Date,Action Target,Size,Cost,Greenhouse Utilization(%),total Profit($),labour(h)\n"
-		workScheduleFile.write(line)
-		areaUsed = 0
-		maxArea = 0
-
-		profit = 0
-		plantingArea = self.parameters.get("plantingArea")
-
-		#Run the csv export from the earliest event date to the last one
-		loopdate = min(self.events)
-		enddate = max(self.events)
-
-		while loopdate <= enddate:
-			if loopdate in self.events:
-				todaysEvents = self.events[loopdate]
-				for e in todaysEvents:
-					profit += e.profit()
-					areaUsed += e.areaChanged() #Track the total used
-					maxArea = max(areaUsed, maxArea) #See how big the plantings get eventually
-					utilizationRate = "{:.2%}".format(areaUsed/plantingArea)
-					labour = e.labourCost()
-					line = e.csv() + "," + utilizationRate + "," + str(profit) + "," + str(labour) + "\n"
-					workScheduleFile.write(line)
-			loopdate = loopdate + timedelta(days=1)
-		
-		#Now write lines adding up monthly totals for costs and income
-		#Build two dictionary Cost = {(month, year): total} and Income = {(month,year): total}
-		Cost = {} #Dictionaries to hold the monthly income,costs and labour total
-		Income = {}
-		Labour = {}
-		loopdate = min(self.events)
-		enddate = max(self.events)
-		line = ""
-
-		while loopdate <= enddate:
-			month = loopdate.month
-			year = loopdate.year
-			index = (month, year)
-			if index not in Income:
-				Income[index] = 0
-			if index not in Cost:
-				Cost[index] = 0
-			if index not in Labour:
-				Labour[index] = 0
-
-			if loopdate in self.events:
-				todaysEvents = self.events[loopdate]
-				for e in todaysEvents:
-					profit = e.profit()
-					if profit > 0: #add the income to the income dictionary
-						Income[index] += profit
-					else:
-						Cost[index] += profit
-					Labour[index] += e.labourCost()
-
-			loopdate = loopdate + timedelta(days=1)
-		#Now write out the month by month cost and income
-		#CSV format month, year
-		line = "month,year,Income,Cost,Labour\n"
-		monthlyFile.write(line)
-		for key in Income:
-			month = str(key[0]) #The key is (month,year)
-			year = str(key[1])
-			income = str(Income[key])
-			cost = str(Cost[key])
-			labour = str(Labour[key])
-			line = month + "," + year + "," + income + "," + cost + "," + labour + "\n"
-			monthlyFile.write(line)
-		
-		#Now output the plant library CSV
-		line = ""
-		count = 0
-		for k,v in self.plants.items():
-			if count == 0:
-				line += v.toCSVHeader()
-				count = 1
-			line += v.toCSV()
-
-		plantsFile.write(line)
-
-		plantsFile.close()
-		#Now write out the Income and Cost
-		monthlyFile.close()
-		workScheduleFile.close() #Done writing work schedule file
 
 	def setGreenHouseSize(self):
 		plantingArea = self.parameters.get("plantingArea")

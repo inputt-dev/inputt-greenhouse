@@ -8,7 +8,7 @@ from farm import *
 Global variables
 """
 inputt = Inputt() 
-db = Greenhouse_DB()
+db = Greenhouse_DB("create_db.sql")
 farm = farm()
 Globals.set("farm", farm)
 Globals.set("db", db)
@@ -35,7 +35,7 @@ def add_planting():
 	plant_planted = inputt.enumerateAndSelect(plants)
 	if plant_planted:
 		planted = farm.get_plant(plant_planted)
-		plant_date =inputt.get_date("Enter planting or harvesting date YYYY-MM-DD:", date(2023,4,1), date(2024,4,1), date(2023,5,1))
+		plant_date = inputt.get_date("Enter planting or harvesting date YYYY-MM-DD:", date(2023,4,1), date(2024,4,1), date(2023,5,1))
 		if plant_date:
 			total_plants = inputt.getInteger("How many plants?", 0, 99999, 100)
 			if total_plants:
@@ -88,6 +88,108 @@ def remove_planting():
 	inputt.menuLevel = ['1']
 	return ret
 
+def export_to_csv():
+	ret = []
+	try:
+		fileName = inputt.getString("Export work schedule CSV.", "work_schedule.csv")
+		workScheduleFile= open(fileName,"w+")
+
+		fileName = inputt.getString("Export monthly cost and income breakdown CSV", "money.csv")
+		monthlyFile = open(fileName,"w+")
+
+		fileName = inputt.getString("plant library", "plants.csv")
+		plantsFile = open(fileName,"w+")
+		ret =+ [workScheduleFile, monthlyFile, plantsFile]
+		#Format a header line
+		line = "Action Type,Date,Action Target,Size,Cost,Greenhouse Utilization(%),total Profit($),labour(h)\n"
+		workScheduleFile.write(line)
+		areaUsed = 0
+		maxArea = 0
+
+		profit = 0
+		plantingArea = farm.parameters.get("plantingArea")
+
+		#Run the csv export from the earliest event date to the last one
+		loopdate = min(farm.events)
+		enddate = max(farm.events)
+
+		while loopdate <= enddate:
+			if loopdate in farm.events:
+				todaysEvents = farm.events[loopdate]
+				for e in todaysEvents:
+					profit += e.profit()
+					areaUsed += e.areaChanged() #Track the total used
+					maxArea = max(areaUsed, maxArea) #See how big the plantings get eventually
+					utilizationRate = "{:.2%}".format(areaUsed/plantingArea)
+					labour = e.labourCost()
+					line = e.csv() + "," + utilizationRate + "," + str(profit) + "," + str(labour) + "\n"
+					workScheduleFile.write(line)
+			loopdate = loopdate + timedelta(days=1)
+		
+		#Now write lines adding up monthly totals for costs and income
+		#Build two dictionary Cost = {(month, year): total} and Income = {(month,year): total}
+		Cost = {} #Dictionaries to hold the monthly income,costs and labour total
+		Income = {}
+		Labour = {}
+		loopdate = min(farm.events)
+		enddate = max(farm.events)
+		line = ""
+
+		while loopdate <= enddate:
+			month = loopdate.month
+			year = loopdate.year
+			index = (month, year)
+			if index not in Income:
+				Income[index] = 0
+			if index not in Cost:
+				Cost[index] = 0
+			if index not in Labour:
+				Labour[index] = 0
+
+			if loopdate in farm.events:
+				todaysEvents = farm.events[loopdate]
+				for e in todaysEvents:
+					profit = e.profit()
+					if profit > 0: #add the income to the income dictionary
+						Income[index] += profit
+					else:
+						Cost[index] += profit
+					Labour[index] += e.labourCost()
+
+			loopdate = loopdate + timedelta(days=1)
+		#Now write out the month by month cost and income
+		#CSV format month, year
+		line = "month,year,Income,Cost,Labour\n"
+		monthlyFile.write(line)
+		for key in Income:
+			month = str(key[0]) #The key is (month,year)
+			year = str(key[1])
+			income = str(Income[key])
+			cost = str(Cost[key])
+			labour = str(Labour[key])
+			line = month + "," + year + "," + income + "," + cost + "," + labour + "\n"
+			monthlyFile.write(line)
+		
+		#Now output the plant library CSV
+		line = ""
+		count = 0
+		for k,v in farm.plants.items():
+			if count == 0:
+				line += v.toCSVHeader()
+				count = 1
+			line += v.toCSV()
+
+		plantsFile.write(line)
+
+		plantsFile.close()
+		#Now write out the Income and Cost
+		monthlyFile.close()
+		workScheduleFile.close() #Done writing work schedule file
+	except Exception as e:
+		ret += [f'{e}']
+	return ret
+
+
 def settings():
 	ret = farm.summary()
 	return [ret]
@@ -106,6 +208,7 @@ inputt.add_menu_item([], name = "Planting calculator", func = root)
 inputt.add_menu_item(['1'], name = "Plantings", func = plantings) 
 inputt.add_menu_item(['1','1'], name = "Add planting", func = add_planting)
 inputt.add_menu_item(['1','2'], name = "Remove planting", func = remove_planting)
+inputt.add_menu_item(['2'], name = "Export to CSV", func = export_to_csv)
 inputt.add_menu_item(['3'], name = "Enter purchase order", func = farm.removePlanting)
 inputt.add_menu_item(['s'], name = "Farm settings", func = settings)
 inputt.add_menu_item(['s', '1'], name = "Edit settings", func = edit_settings)
