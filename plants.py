@@ -8,17 +8,21 @@ The plant class encasuplates any farm produce that is harvested regularly
 Plant specific information is encapsulated in child classes
 """
 class plant:  #defines a plant and its attributes
-	def __init__(self, name, rowspacing, plantspacing, growtime, lifespan, determinate, harvestincrement, yieldrate, sellprice):
-		parameters = {}
-		parameters["type"] = (name, "The type of Plant")
-		parameters["rowspacing"] = (rowspacing, "Distance between planting rows(m)")
-		parameters["plantspacing"] = (plantspacing, "Distance between plants in a row(m)")
-		parameters["growtime"] = (growtime, "Time duration until its ready to harvest(d)")
-		parameters["lifespan"] = (lifespan, "How long the plant lives(d)")
-		parameters["determinate"] = (determinate, "Determinate(1 or multiple harvests)")
-		parameters["harvestincrement"] = (harvestincrement, "time between harvests for indeterminates(d)")
-		parameters["yieldrate"] = (yieldrate, "Yield rate(units/planting increment)")
-		parameters["sellprice"] = (sellprice,"Selling price($/planting unit)")
+	def __init__(self, name):
+		parameters = {} #attributes of a plant common to all plants
+
+		self.name = name
+		parameters["rowspacing"] = (0, "Distance between planting rows(m)")
+		parameters["plantspacing"] = (0, "Distance between plants in a row(m)")
+		parameters["growtime"] = (0, "Time duration until its ready to harvest(d)")
+		parameters["lifespan"] = (0, "How long the plant lives(d)")
+		parameters["determinate"] = (True, "Determinate(1 or multiple harvests)")
+		parameters["harvestincrement"] = (0, "time between harvests for indeterminates(d)")
+		parameters["yieldrate"] = (0, "Yield rate(units/planting increment)")
+		parameters["sellprice"] = (0,"Selling price($/planting unit)")
+		self.latin = f"Latin name of {name}"
+		parameters["vendor"] = ("endor","Vendor name")
+
 		self.parameters = Parameters(parameters)
 
 	def __str__(self):
@@ -31,6 +35,11 @@ class plant:  #defines a plant and its attributes
 		ret += "    Yield Rate:" + str(self.parameters.get("yieldrate")) + "\n"
 		ret += "    Sell price:" + str(self.parameters.get("sellprice")) + "\n"
 		return ret
+	
+	def to_tuple(self):
+		ret = self.parameters.to_tuple()
+		return ret
+	
 	def profit(self):
 		return self.parameters.get("sellprice") * self.parameters.get("yieldrate")
 
@@ -42,9 +51,8 @@ class plant:  #defines a plant and its attributes
 		ret = self.parameters.toCSVHeader()
 		return ret
 
-	def getEvents(self, plantdate, totalplants):
+	def get_Events(self, plantdate, totalplants):
 		ret = []
-		#Version 1 of add plant event handling,manual to be replaced with above code when ready
 		newEvent = Planting(plantdate, self, totalplants)
 		ret.append(newEvent)
 		lifespan = self.parameters.get("lifespan") #in days how long the plant lives
@@ -69,22 +77,22 @@ class plant:  #defines a plant and its attributes
 		w = self.parameters.get("plantspacing")
 		area = l * w
 		return area
+	
 class IcebergLettuce(plant):
 	def __init__(self):
-		rowspacing = 0.38
-		plantspacing = 0.28 
-		growtime = 80
-		lifespan = 81
-		determinate = True
-		yieldrate = 1
-		sellprice = 1.89
-		harvestincrement = 2 #its not determinate so set its next harvest to after its dead
-		name = "IceBerg Lettuce"
-		super().__init__(name, rowspacing, plantspacing, growtime, lifespan, determinate, harvestincrement, yieldrate, sellprice)
+		super().__init__("IceBerg Lettuce")
+		self.parameters.set("rowspacing",0.38)
+		self.parameters.set("plantspacing", 0.28)
+		self.parameters.set("growtime", 80)
+		self.parameters.set("lifespan", 81)
+		self.parameters.set("determinate", True)
+		self.parameters.set("harvestincrement", 2)
+		self.parameters.set("yieldrate", 1)
+		self.parameters.set("sellprice", 1.89)
 
-	def getEvents(self, plantdate, totalplants):
+	def get_Events(self, plantdate, totalplants):
 		#Lets add a watering schedule
-		ret = super().getEvents(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
+		ret = super().get_Events(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
 		#Watering: Water lettuce once to twice per week or every 4 days whenever rainfall is inadequate.
 		startdate = plantdate #start watering at the begining until 2 days before harvest
 		lifespan = self.parameters.get("lifespan")
@@ -93,9 +101,10 @@ class IcebergLettuce(plant):
 
 		while loopdate <= enddate:
 			watering = Watering(loopdate, self, totalplants) #7 cents of water per plant, .34 of minute to water it
+			watering.parameters.set("cost", 0.07)
+			watering.parameters.set("labour", 0.34)
 			ret.append(watering)
 			loopdate = loopdate + timedelta(days = 4)
-
 		return ret
 class Saskatoons(plant):
 	def __init__(self):
@@ -108,14 +117,22 @@ class Saskatoons(plant):
 		sellprice = 14.97 #Based on coop 4.99 for 300 grams retail
 		harvestincrement = 365
 		name = "Saskatoon Orchard"
-		super().__init__(name, rowspacing, plantspacing, growtime, lifespan, determinate, harvestincrement, yieldrate, sellprice)
+		super().__init__(name)
+		self.parameters.set("rowspacing",rowspacing)
+		self.parameters.set("plantspacing", plantspacing)
+		self.parameters.set("growtime", growtime)
+		self.parameters.set("lifespan", lifespan)
+		self.parameters.set("determinate", determinate)
+		self.parameters.set("harvestincrement", harvestincrement)
+		self.parameters.set("yieldrate", yieldrate)
+		self.parameters.set("sellprice", sellprice)
 
-	def getEvents(self, plantdate, totalplants): #Return all the events associated with saskatoon plants, based on the start date
+	def get_Events(self, plantdate, totalplants): #Return all the events associated with saskatoon plants, based on the start date
 		
 		if totalplants <= 1:  #to catch the recursion for replanting dead plants
 			return []
 
-		ret = super().getEvents(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
+		ret = super().get_Events(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
 
 		#After the basics lets add events to show the lifetime list of actions we do to these plants
 		#Set the costs of the actions first
@@ -152,7 +169,7 @@ class Saskatoons(plant):
 		irrigationInstall.type = "Irrigation Install"
 		ret.append(irrigationInstall)
 		#	Plant Seedlings
-		#Handled by the super classes getEvents function
+		#Handled by the super classes get_Events function
 
 		#Year 2:
 		#	Spray herbicide
@@ -172,7 +189,7 @@ class Saskatoons(plant):
 		#Now lets add more events to plant more seedlings to replace losses
 		rePlantDate = plantdate + relativedelta(years = 1, days = 4)
 		replanting = Planting(rePlantDate, self, deadPlants)
-		replacements = super().getEvents(rePlantDate, deadPlants)
+		replacements = super().get_Events(rePlantDate, deadPlants)
 		for r in replacements:
 			r.parameters.set("type", "Replanting losses({})".format(deadPlants))
 		ret.append(replanting)
@@ -191,7 +208,7 @@ class Saskatoons(plant):
 		rePlantDate = plantdate + relativedelta(years = 2, days = 4)
 		deadPlants = round(totalplants * 0.075)
 		replanting = Planting(rePlantDate, self, deadPlants)
-		replacements = super().getEvents(rePlantDate, deadPlants)
+		replacements = super().get_Events(rePlantDate, deadPlants)
 		for r in replacements:
 			r.parameters.set("type", "Replanting losses({})".format(deadPlants))
 		ret.append(replanting)
@@ -350,7 +367,6 @@ class Saskatoons(plant):
 				event.parameters.set("duration", 1)
 				event.parameters.set("labour",  10/60)
 		return ret
-
 class IndeterminateTomatoes(plant):
 	def __init__(self):
 		rowspacing = 0.37
@@ -363,12 +379,20 @@ class IndeterminateTomatoes(plant):
 		harvestincrement = 17
 		name="Indeterminate Tomatoe"
 
-		super().__init__(name, rowspacing, plantspacing, growtime, lifespan, determinate, harvestincrement, yieldrate, sellprice)
-	def getEvents(self, plantdate, totalplants):
-		ret = super().getEvents(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
-		#step 1: Germinate the seeds
-		return ret 
+		super().__init__(name)
+		self.parameters.set("rowspacing",rowspacing)
+		self.parameters.set("plantspacing", plantspacing)
+		self.parameters.set("growtime", growtime)
+		self.parameters.set("lifespan", lifespan)
+		self.parameters.set("determinate", determinate)
+		self.parameters.set("harvestincrement", harvestincrement)
+		self.parameters.set("yieldrate", yieldrate)
+		self.parameters.set("sellprice", sellprice)
 
+	def get_Events(self, plantdate, totalplants):
+		ret = super().get_Events(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
+		#step 1: Germinate the seeds
+		return ret
 class LongEnglishCucumbers(plant):
 	def __init__(self):
 		rowspacing = 0.9
@@ -381,12 +405,19 @@ class LongEnglishCucumbers(plant):
 		harvestincrement = 21
 		name="Long English Cucumbers"
 
-		super().__init__(name, rowspacing, plantspacing, growtime, lifespan, determinate, harvestincrement, yieldrate, sellprice)
-	def getEvents(self, plantdate, totalplants):
-		ret = super().getEvents(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
+		super().__init__(name)
+		self.parameters.set("rowspacing",rowspacing)
+		self.parameters.set("plantspacing", plantspacing)
+		self.parameters.set("growtime", growtime)
+		self.parameters.set("lifespan", lifespan)
+		self.parameters.set("determinate", determinate)
+		self.parameters.set("harvestincrement", harvestincrement)
+		self.parameters.set("yieldrate", yieldrate)
+		self.parameters.set("sellprice", sellprice)
+	def get_Events(self, plantdate, totalplants):
+		ret = super().get_Events(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
 		#step 1: Germinate the seeds
 		return ret 
-
 class CanaryBellPeppers(plant):
 	def __init__(self):
 		rowspacing = 0.53
@@ -399,12 +430,19 @@ class CanaryBellPeppers(plant):
 		harvestincrement = 2 #its not determinate so set its next harvest to after its dead
 		name = "Canary Bell Peppers"
 
-		super().__init__(name, rowspacing, plantspacing, growtime, lifespan, determinate, harvestincrement, yieldrate, sellprice)
-	def getEvents(self, plantdate, totalplants):
-		ret = super().getEvents(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
+		super().__init__(name)
+		self.parameters.set("rowspacing",rowspacing)
+		self.parameters.set("plantspacing", plantspacing)
+		self.parameters.set("growtime", growtime)
+		self.parameters.set("lifespan", lifespan)
+		self.parameters.set("determinate", determinate)
+		self.parameters.set("harvestincrement", harvestincrement)
+		self.parameters.set("yieldrate", yieldrate)
+		self.parameters.set("sellprice", sellprice)
+	def get_Events(self, plantdate, totalplants):
+		ret = super().get_Events(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
 		#step 1: Germinate the seeds
 		return ret 
-
 class CaliforniaWonderGreenBellPeppers(plant):
 	def __init__(self):
 		rowspacing = 0.37
@@ -417,9 +455,17 @@ class CaliforniaWonderGreenBellPeppers(plant):
 		harvestincrement = 2 #its not determinate so set its next harvest to after its dead
 		name = "California Wonder Green Bell Peppers"
 
-		super().__init__(name, rowspacing, plantspacing, growtime, lifespan, determinate, harvestincrement, yieldrate, sellprice)
-	def getEvents(self, plantdate, totalplants):
-		ret = super().getEvents(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
+		super().__init__(name)
+		self.parameters.set("rowspacing",rowspacing)
+		self.parameters.set("plantspacing", plantspacing)
+		self.parameters.set("growtime", growtime)
+		self.parameters.set("lifespan", lifespan)
+		self.parameters.set("determinate", determinate)
+		self.parameters.set("harvestincrement", harvestincrement)
+		self.parameters.set("yieldrate", yieldrate)
+		self.parameters.set("sellprice", sellprice)
+	def get_Events(self, plantdate, totalplants):
+		ret = super().get_Events(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
 		#step 1: Germinate the seeds
 		return ret 
 class TomatoesOV(plant):
@@ -433,9 +479,18 @@ class TomatoesOV(plant):
 		sellprice = 1.53
 		harvestincrement = 2 #its not determinate so set its next harvest to after its dead
 		name = "Tomatoes on the Vine"
-		super().__init__(name, rowspacing, plantspacing, growtime, lifespan, determinate, harvestincrement, yieldrate, sellprice)
-	def getEvents(self, plantdate, totalplants):
-		ret = super().getEvents(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
+
+		super().__init__(name)
+		self.parameters.set("rowspacing",rowspacing)
+		self.parameters.set("plantspacing", plantspacing)
+		self.parameters.set("growtime", growtime)
+		self.parameters.set("lifespan", lifespan)
+		self.parameters.set("determinate", determinate)
+		self.parameters.set("harvestincrement", harvestincrement)
+		self.parameters.set("yieldrate", yieldrate)
+		self.parameters.set("sellprice", sellprice)
+	def get_Events(self, plantdate, totalplants):
+		ret = super().get_Events(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
 		#step 1: Germinate the seeds
 		return ret 
 class NankingCherry(plant):
@@ -449,8 +504,15 @@ class NankingCherry(plant):
 		sellprice = 1.53
 		harvestincrement = 365 #its not determinate so set its next harvest to after its dead
 		name = "Nanking Cherries"
-		super().__init__(name, rowspacing, plantspacing, growtime, lifespan, determinate, harvestincrement, yieldrate, sellprice)
-
+		super().__init__(name)
+		self.parameters.set("rowspacing",rowspacing)
+		self.parameters.set("plantspacing", plantspacing)
+		self.parameters.set("growtime", growtime)
+		self.parameters.set("lifespan", lifespan)
+		self.parameters.set("determinate", determinate)
+		self.parameters.set("harvestincrement", harvestincrement)
+		self.parameters.set("yieldrate", yieldrate)
+		self.parameters.set("sellprice", sellprice)
 class TomatosMountainMagic(plant):
 	def __init__(self):
 		rowspacing = 0.53
@@ -463,12 +525,19 @@ class TomatosMountainMagic(plant):
 		harvestincrement = 2 #its not determinate so set its next harvest to after its dead
 		name = "Tomatos: Mountain Magic"
 
-		super().__init__(name, rowspacing, plantspacing, growtime, lifespan, determinate, harvestincrement, yieldrate, sellprice)
-	def getEvents(self, plantdate, totalplants):
-		ret = super().getEvents(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
+		super().__init__(name)
+		self.parameters.set("rowspacing",rowspacing)
+		self.parameters.set("plantspacing", plantspacing)
+		self.parameters.set("growtime", growtime)
+		self.parameters.set("lifespan", lifespan)
+		self.parameters.set("determinate", determinate)
+		self.parameters.set("harvestincrement", harvestincrement)
+		self.parameters.set("yieldrate", yieldrate)
+		self.parameters.set("sellprice", sellprice)
+	def get_Events(self, plantdate, totalplants):
+		ret = super().get_Events(plantdate, totalplants) #a list of all the events related to basic plant harvesting, and death
 		#step 1: Germinate the seeds
 		return ret 
-
 """Germinate
 
 Use seed starting mix, such as Miracle Gro or Jiffy Mix, to start your seeds. Fill a bowl with some mix and knead in some water till the
@@ -556,4 +625,3 @@ From this point forward, it's mostly watering and picking fruit till the season 
 Here are a couple useful links to help with any problems the tomatoes may have:
 
 """
-

@@ -36,31 +36,33 @@ class farm: #information about when plants are planted
 		self.trackChanges = 0 #Increment for every change done to the schedule
 		self.addEvent(openingEvent)
 		self.trackChanges = 0 #How many changes are done for the confirmExit function, reset back to zero after addEvent adds it
-		self.PlantingEventID = 1
+
+		Indeterminate_Tomatoes = IndeterminateTomatoes()
+		self.add_Planting(Indeterminate_Tomatoes, date(2023,6,6), 100)
+
+		California_WonderGreenBellPeppers = CaliforniaWonderGreenBellPeppers()
+		self.add_Planting(California_WonderGreenBellPeppers, date(2023,7,1), 49)
+
+		Long_EnglishCucumbers = LongEnglishCucumbers()
+		self.add_Planting(Long_EnglishCucumbers, date(2023,7,1), 49)
+
+		Canary_BellPeppers = CanaryBellPeppers()
+		self.add_Planting(Canary_BellPeppers, date(2023,7,1), 49)
+		
+		Saskatoons_ = Saskatoons()
+		self.add_Planting(Saskatoons_, date(2023,7,1), 49)
+
+		Iceberg_Lettuce = IcebergLettuce()
+		self.add_Planting(Iceberg_Lettuce, date(2023,7,1), 49)
 
 		#Create the plant dictionary with instances of every type defined in the program
 		self.plants = []
-		self.plants.append(IndeterminateTomatoes())
-		self.plants.append(LongEnglishCucumbers())
-		self.plants.append(CanaryBellPeppers())
-		self.plants.append(CaliforniaWonderGreenBellPeppers())
-		self.plants.append(Saskatoons())
-		self.plants.append(IcebergLettuce())
-		planted = IndeterminateTomatoes()
-		plant_date = date(2023,6,6)
-		total_plants = 100
-		events = planted.getEvents(plant_date, total_plants)
-		for event in events:
-			event.parameters.set("ID", self.PlantingEventID)
-			self.addEvent(event)
-			self.PlantingEventID += 1 #Need a new unique planting event ID
-
-		planted = CaliforniaWonderGreenBellPeppers()
-		events = planted.getEvents(date(2023,3,3), 129)
-		for event in events:
-			event.parameters.set("ID", self.PlantingEventID)
-			self.addEvent(event)
-			self.PlantingEventID += 1 #Need a new unique planting event ID
+		self.plants.append(Indeterminate_Tomatoes)
+		self.plants.append(Long_EnglishCucumbers)
+		self.plants.append(Canary_BellPeppers)
+		self.plants.append(California_WonderGreenBellPeppers)
+		self.plants.append(Saskatoons_)
+		self.plants.append(Iceberg_Lettuce)
 
 	def __str__(self):
 		begindate = self.parameters.get("Start date")
@@ -101,9 +103,9 @@ class farm: #information about when plants are planted
 			loopdate = loopdate + timedelta(days=1)
 		return ret
 	
-	def get_plant(self, type):
+	def get_plant(self, name):
 		for plant in self.plants:
-			if type == plant.parameters.get("type"):
+			if name == plant.parameters.get("name"):
 				return plant
 		return None
 
@@ -112,7 +114,7 @@ class farm: #information about when plants are planted
 		ret = []
 
 		for p in self.plants:
-			ret.append(p.parameters.get("type"))
+			ret.append(p.parameters.get("name"))
 		return ret
 	
 	def removePlanting(self):
@@ -153,6 +155,10 @@ class farm: #information about when plants are planted
 					self.events[e] = newList
 			else:
 				print("Selection out of range")
+	def add_Planting(self, plant, date, totalplants):
+		#Get all subsequent events that this plant generates and add it the events list
+		events = plant.get_Events(date, totalplants)
+		return events
 
 	def addEvent(self, event): #Add an event to this crops history
 		startdate = event.parameters.get("dateActioned")

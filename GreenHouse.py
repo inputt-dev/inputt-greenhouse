@@ -8,11 +8,13 @@ from farm import *
 Global variables
 """
 inputt = Inputt() 
-db = Greenhouse_DB("create_db.sql")
+Globals.set("inputt", inputt)
+
 farm = farm()
 Globals.set("farm", farm)
+
+db = Greenhouse_DB("create_db.sql")
 Globals.set("db", db)
-Globals.set("inputt", inputt)
 
 """
 Define the menu option functions
@@ -189,7 +191,6 @@ def export_to_csv():
 		ret += [f'{e}']
 	return ret
 
-
 def settings():
 	ret = farm.summary()
 	return [ret]
@@ -201,6 +202,30 @@ def plant_library():
 def edit_settings():
 	return ["Settings"]
 
+def database():
+	return ["Database utilities"]
+
+def farming_events():
+	return ["Farming Events:", "Show and Save current events not committed to database yet"]
+
+def all_farming_events():
+	return farm.events
+
+def planting_events():
+	return farm.getAllPlantingEvents()
+
+def harvest_events():
+	return farm.getAllHarvestEvents()
+
+def farming_summary():
+	return [farm.summary]
+
+def save_to_database():
+	ret = []
+	#Take all the events and plant information and save it to the database
+	db.
+	for event in farm.events:
+		db.saveE
 """
 Define the menu hierarchy and supply the functions that go with each
 """
@@ -208,17 +233,17 @@ inputt.add_menu_item([], name = "Planting calculator", func = root)
 inputt.add_menu_item(['1'], name = "Plantings", func = plantings) 
 inputt.add_menu_item(['1','1'], name = "Add planting", func = add_planting)
 inputt.add_menu_item(['1','2'], name = "Remove planting", func = remove_planting)
-inputt.add_menu_item(['2'], name = "Export to CSV", func = export_to_csv)
-inputt.add_menu_item(['3'], name = "Enter purchase order", func = farm.removePlanting)
-inputt.add_menu_item(['s'], name = "Farm settings", func = settings)
-inputt.add_menu_item(['s', '1'], name = "Edit settings", func = edit_settings)
-inputt.add_menu_item(['s', 'l'], name = "Load Farm", func = farm.save)
-inputt.add_menu_item(['s', 's'], name = "Save Farm", func = farm.load)
-inputt.add_menu_item(['s', '1'], name = "Plant library", func = plant_library)
-
-
-inputt.add_menu_item(['x'], name = "Export to CSV", func = farm.exportCSV)
-
+inputt.add_menu_item(['2'], name = "Farm settings", func = settings)
+inputt.add_menu_item(['2', '1'], name = "Edit settings", func = edit_settings)
+inputt.add_menu_item(['2', '1'], name = "Plant library", func = plant_library)
+inputt.add_menu_item(['3'], name = "Database", func = database)
+inputt.add_menu_item(['3', '1'], name = "Save to db", func = save_to_database)
+inputt.add_menu_item(['3', '2'], name = "Change database", func = change_database)
+inputt.add_menu_item(['4'], name = "Farming events", func = farming_events)
+inputt.add_menu_item(['4', '1'], name = "List all events", func = all_farming_events)
+inputt.add_menu_item(['4', '2'], name = "List all planting events", func = planting_events)
+inputt.add_menu_item(['4', '3'], name = "List all harvest events", func = harvest_events)
+inputt.add_menu_item(['4', '4'], name = "Summary", func = farming_summary)
 
 """
 The main loop, the program starts by automatically processing the base menu, or the empty list []

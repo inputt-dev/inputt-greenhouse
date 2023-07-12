@@ -13,9 +13,11 @@ class GreenhouseEvent: #A class to hold all the information about planting, harv
 			"labour": (0, "How many hours it takes to finish this event"),
 			"duration": (1, "How many days you have to finish this event once it starts"),
 			"cost": (0, "The cost per plant of this event"),
-			"totalCost": (0, "How much this event costs")
+			"totalCost": (0, "How much this event costs"),
+			"nextID": (0, "The next unique planting ID")
 			}
 		self.parameters = Parameters(p)
+
 	def __str__(self):
 		dateActioned = self.parameters.get("dateActioned")
 		size = self.parameters.get("size")
